@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { palette } from '../core/theme/palette';
+import { useAppTheme } from '../appcore/theme/ThemeContext';
 import { radius, spacing, touchTarget } from '../core/theme/layout';
 import { typography } from '../core/theme/typography';
 
@@ -27,6 +27,7 @@ export function PrimaryButton({
   disabled = false,
   fullWidth = true,
 }: Props) {
+  const { palette } = useAppTheme();
   const isDisabled = disabled || loading;
 
   const backgroundColor =

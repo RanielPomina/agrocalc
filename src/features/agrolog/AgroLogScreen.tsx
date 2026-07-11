@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 
 import type { AgroLogEntry } from '../../modules/agrolog/models';
@@ -7,9 +7,10 @@ import { createId } from '../../core/utils/id';
 import { formatDateTimeBR } from '../../core/utils/format';
 import { buildAgroLogReport } from '../../core/utils/reports';
 import { shareViaWhatsApp } from '../../core/utils/whatsapp';
-import { palette } from '../../core/theme/palette';
 import { spacing } from '../../core/theme/layout';
 import { typography } from '../../core/theme/typography';
+import type { AppPalette } from '../../core/theme/palette';
+import { useAppTheme } from '../../appcore/theme/ThemeContext';
 import { useSession } from '../../appcore/session/SessionContext';
 import { Card } from '../../ui/Card';
 import { EmptyState } from '../../ui/EmptyState';
@@ -18,16 +19,13 @@ import { PrimaryButton } from '../../ui/PrimaryButton';
 import { Screen } from '../../ui/Screen';
 import { ScreenHeader } from '../../ui/ScreenHeader';
 
-type FormState = {
-  fieldName: string;
-  activity: string;
-  notes: string;
-};
-
+type FormState = { fieldName: string; activity: string; notes: string };
 const emptyForm: FormState = { fieldName: '', activity: '', notes: '' };
 
 export function AgroLogScreen() {
   const { session } = useSession();
+  const { palette } = useAppTheme();
+  const styles = useMemo(() => createStyles(palette), [palette]);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [entries, setEntries] = useState<AgroLogEntry[]>([]);
 
@@ -74,53 +72,21 @@ export function AgroLogScreen() {
 
   return (
     <Screen>
-      <ScreenHeader
-        kicker="Diário de bordo"
-        title="AgroLog"
-        subtitle="Registre horas e atividades por talhão"
-        accent={palette.success}
-      />
+      <ScreenHeader kicker="Diário de bordo" title="AgroLog" subtitle="Registre horas e atividades por talhão" accent={palette.success} />
 
-      <PrimaryButton
-        label="Compartilhar relatório no WhatsApp"
-        onPress={handleShare}
-        icon="whatsapp"
-        variant="secondary"
-      />
+      <PrimaryButton label="Compartilhar relatório no WhatsApp" onPress={handleShare} icon="whatsapp" variant="secondary" />
 
       <Card title="Nova atividade" accent={palette.success}>
-        <NeonInput
-          label="Talhão"
-          value={form.fieldName}
-          onChangeText={(text) => setForm((s) => ({ ...s, fieldName: text }))}
-          placeholder="Ex.: Talhão 3"
-          autoCapitalize="words"
-        />
-        <NeonInput
-          label="Atividade"
-          value={form.activity}
-          onChangeText={(text) => setForm((s) => ({ ...s, activity: text }))}
-          placeholder="Ex.: Pulverização"
-          autoCapitalize="sentences"
-        />
-        <NeonInput
-          label="Observações (opcional)"
-          value={form.notes}
-          onChangeText={(text) => setForm((s) => ({ ...s, notes: text }))}
-          placeholder="Ex.: EPI conferido, vento leve"
-          multiline
-        />
+        <NeonInput label="Talhão" value={form.fieldName} onChangeText={(t) => setForm((s) => ({ ...s, fieldName: t }))} placeholder="Ex.: Talhão 3" autoCapitalize="words" />
+        <NeonInput label="Atividade" value={form.activity} onChangeText={(t) => setForm((s) => ({ ...s, activity: t }))} placeholder="Ex.: Pulverização" autoCapitalize="sentences" />
+        <NeonInput label="Observações (opcional)" value={form.notes} onChangeText={(t) => setForm((s) => ({ ...s, notes: t }))} placeholder="Ex.: EPI conferido, vento leve" multiline />
         <PrimaryButton label="Iniciar atividade" onPress={handleStart} icon="play-circle-outline" />
       </Card>
 
       <Text style={styles.sectionTitle}>Registros ({entries.length})</Text>
 
       {entries.length === 0 ? (
-        <EmptyState
-          icon="clipboard-text-clock-outline"
-          title="Sem atividades ainda"
-          description="Registre a primeira atividade para começar seu diário offline."
-        />
+        <EmptyState icon="clipboard-text-clock-outline" title="Sem atividades ainda" description="Registre a primeira atividade para começar seu diário offline." />
       ) : (
         <FlatList
           data={entries}
@@ -133,9 +99,7 @@ export function AgroLogScreen() {
               <View style={styles.entry}>
                 <View style={styles.entryHeader}>
                   <Text style={styles.entryTitle}>{item.activity}</Text>
-                  <Text style={[styles.status, { color: inProgress ? palette.fieldGold : palette.success }]}>
-                    {inProgress ? 'Em curso' : 'Concluída'}
-                  </Text>
+                  <Text style={[styles.status, { color: inProgress ? palette.fieldGold : palette.success }]}>{inProgress ? 'Em curso' : 'Concluída'}</Text>
                 </View>
                 <Text style={styles.entryMeta}>
                   {item.fieldName} · {formatDateTimeBR(item.startedAt)}
@@ -143,25 +107,8 @@ export function AgroLogScreen() {
                 </Text>
                 {item.notes ? <Text style={styles.entryNote}>{item.notes}</Text> : null}
                 <View style={styles.entryActions}>
-                  {inProgress ? (
-                    <PrimaryButton
-                      label="Finalizar"
-                      onPress={() => handleFinish(item.id)}
-                      icon="check-circle-outline"
-                      variant="secondary"
-                    />
-                  ) : null}
-                  <PrimaryButton
-                    label="Remover"
-                    variant="ghost"
-                    icon="trash-can-outline"
-                    onPress={() =>
-                      Alert.alert('Remover atividade', `Excluir "${item.activity}"?`, [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Remover', style: 'destructive', onPress: () => handleRemove(item.id) },
-                      ])
-                    }
-                  />
+                  {inProgress ? <PrimaryButton label="Finalizar" onPress={() => handleFinish(item.id)} icon="check-circle-outline" variant="secondary" /> : null}
+                  <PrimaryButton label="Remover" variant="ghost" icon="trash-can-outline" onPress={() => Alert.alert('Remover atividade', `Excluir "${item.activity}"?`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Remover', style: 'destructive', onPress: () => handleRemove(item.id) }])} />
                 </View>
               </View>
             );
@@ -172,53 +119,14 @@ export function AgroLogScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  sectionTitle: {
-    color: palette.textPrimary,
-    fontSize: typography.sectionTitle,
-    fontWeight: '900',
-    marginBottom: spacing.md,
-    marginTop: spacing.md,
-  },
-  entry: {
-    backgroundColor: palette.surface,
-    borderColor: palette.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: spacing.lg,
-  },
-  entryHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  entryTitle: {
-    color: palette.textPrimary,
-    fontSize: typography.sectionTitle,
-    fontWeight: '900',
-  },
-  status: {
-    fontSize: typography.caption,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  entryMeta: {
-    color: palette.textSecondary,
-    fontSize: typography.body,
-    fontWeight: '700',
-  },
-  entryNote: {
-    color: palette.textMuted,
-    fontSize: typography.caption,
-    fontStyle: 'italic',
-    fontWeight: '600',
-    marginTop: spacing.xs,
-  },
-  entryActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-});
+const createStyles = (palette: AppPalette) =>
+  StyleSheet.create({
+    sectionTitle: { color: palette.textPrimary, fontSize: typography.sectionTitle, fontWeight: '900', marginBottom: spacing.md, marginTop: spacing.md },
+    entry: { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: 12, borderWidth: 1, padding: spacing.lg },
+    entryHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
+    entryTitle: { color: palette.textPrimary, fontSize: typography.sectionTitle, fontWeight: '900' },
+    status: { fontSize: typography.caption, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
+    entryMeta: { color: palette.textSecondary, fontSize: typography.body, fontWeight: '700' },
+    entryNote: { color: palette.textMuted, fontSize: typography.caption, fontStyle: 'italic', fontWeight: '600', marginTop: spacing.xs },
+    entryActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  });

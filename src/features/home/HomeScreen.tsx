@@ -1,15 +1,16 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '../../appcore/session/SessionContext';
 import { usePlan } from '../../appcore/plan/PlanContext';
+import { useAppTheme } from '../../appcore/theme/ThemeContext';
 import type { RootStackParamList, ScreenProps } from '../../appcore/navigation/types';
 import { useAutoSyncOnOnline } from '../../core/network/connectivity';
 import { readCollection } from '../../core/storage/localStore';
 import { createSyncCoordinator } from '../../core/sync/createSyncCoordinator';
-import { palette } from '../../core/theme/palette';
-import { radius, spacing } from '../../core/theme/layout';
+import { radius, spacing, touchTarget } from '../../core/theme/layout';
 import { typography } from '../../core/theme/typography';
 import type { AgroTalkNotice } from '../../modules/agrotalk/models';
 import { currentNotice } from '../../modules/agrotalk/agroTalkRepository';
@@ -33,6 +34,7 @@ export function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { session, signOut } = useSession();
   const { plan } = usePlan();
+  const { palette, mode, toggle } = useAppTheme();
   const [notice, setNotice] = useState<AgroTalkNotice>(currentNotice);
   const [syncing, setSyncing] = useState(false);
 
@@ -103,45 +105,80 @@ export function HomeScreen({ navigation }: Props) {
       : palette.textMuted;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: palette.background }]}>
+      <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={mode === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+          onPress={toggle}
+          style={({ pressed }) => [
+            styles.themeButton,
+            {
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+            },
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name={mode === 'dark' ? 'weather-sunny' : 'weather-night'}
+            size={22}
+            color={mode === 'dark' ? palette.fieldGold : palette.neonPurple}
+          />
+          <Text style={[styles.themeLabel, { color: palette.textPrimary }]}>
+            {mode === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Sincronizar na sede"
+          onPress={handleSync}
+          disabled={syncing}
+          style={({ pressed }) => [
+            styles.syncPill,
+            { borderColor: palette.neonBlue },
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Text style={[styles.syncText, { color: palette.neonBlue }]}>
+            {syncing ? '...' : 'Sede Sync'}
+          </Text>
+        </Pressable>
+      </View>
+
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.xl },
+          { paddingBottom: insets.bottom + spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.kicker}>Offline-first agro OS</Text>
-            <Text style={styles.title}>AgroSafra</Text>
+            <Text style={[styles.kicker, { color: palette.neonBlue }]}>Offline-first agro OS</Text>
+            <Text style={[styles.title, { color: palette.textPrimary }]}>AgroSafra</Text>
             {session ? (
-              <Text style={styles.userLine}>
+              <Text style={[styles.userLine, { color: palette.textSecondary }]}>
                 {session.role === 'admin' ? '👑 Patrão' : '🧑‍🌾 Funcionário'} · {session.displayName}
                 {session.groupCode ? `  ·  ${session.groupCode}` : ''}
               </Text>
             ) : null}
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Sincronizar na sede"
-            onPress={handleSync}
-            disabled={syncing}
-            style={({ pressed }) => [styles.syncPill, pressed && { opacity: 0.7 }]}
-          >
-            <Text style={styles.syncText}>{syncing ? '...' : 'Sede Sync'}</Text>
-          </Pressable>
         </View>
 
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Plano ativo: ${plan.title}. Trocar plano.`}
           onPress={() => navigation.navigate('Plan')}
-          style={[styles.planCard, { borderColor: planAccent }]}
+          style={[
+            styles.planCard,
+            { backgroundColor: palette.surfaceRaised, borderColor: planAccent },
+          ]}
         >
           <View>
             <Text style={[styles.planKicker, { color: planAccent }]}>Plano</Text>
-            <Text style={styles.planTitle}>{plan.title}</Text>
+            <Text style={[styles.planTitle, { color: palette.textPrimary }]}>{plan.title}</Text>
           </View>
           <Text style={[styles.planLink, { color: planAccent }]}>
             {plan.adsEnabled ? 'Com anúncios · Trocar' : 'Trocar'}
@@ -160,19 +197,24 @@ export function HomeScreen({ navigation }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Sincronizar com sede local"
           onPress={handleSync}
-          style={styles.syncCard}
+          style={[
+            styles.syncCard,
+            { backgroundColor: palette.surface, borderColor: palette.border },
+          ]}
           disabled={syncing}
         >
-          <Text style={styles.syncTitle}>AgroSync Local</Text>
-          <Text style={styles.syncBody}>
+          <Text style={[styles.syncTitle, { color: palette.textPrimary }]}>AgroSync Local</Text>
+          <Text style={[styles.syncBody, { color: palette.textSecondary }]}>
             No Wi-Fi da sede, toque para descarregar avisos, chat e AgroLog sem gastar dados
             móveis. Quando ficar online, a fila é enviada automaticamente.
           </Text>
         </Pressable>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Ferramentas locais</Text>
-          <Text style={styles.sectionMeta}>{featureActions.length} módulos</Text>
+          <Text style={[styles.sectionTitle, { color: palette.textPrimary }]}>Ferramentas locais</Text>
+          <Text style={[styles.sectionMeta, { color: palette.textMuted }]}>
+            {featureActions.length} módulos
+          </Text>
         </View>
 
         <View style={styles.grid}>
@@ -185,7 +227,7 @@ export function HomeScreen({ navigation }: Props) {
 
         {session ? (
           <Pressable onPress={handleSignOut} style={styles.signOut} accessibilityRole="button">
-            <Text style={styles.signOutText}>Sair da sessão</Text>
+            <Text style={[styles.signOutText, { color: palette.textMuted }]}>Sair da sessão</Text>
           </Pressable>
         ) : null}
       </ScrollView>
@@ -195,11 +237,44 @@ export function HomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: palette.background,
     flex: 1,
+  },
+  topBar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  themeButton: {
+    alignItems: 'center',
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    minHeight: touchTarget.medium - 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  themeLabel: {
+    fontSize: typography.caption,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  syncPill: {
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  syncText: {
+    fontSize: typography.caption,
+    fontWeight: '900',
   },
   content: {
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
   header: {
     alignItems: 'center',
@@ -208,7 +283,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   kicker: {
-    color: palette.neonBlue,
     fontSize: typography.caption,
     fontWeight: '800',
     letterSpacing: 1,
@@ -216,31 +290,16 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    color: palette.textPrimary,
     fontSize: typography.screenTitle,
     fontWeight: '900',
   },
   userLine: {
-    color: palette.textSecondary,
     fontSize: typography.caption,
     fontWeight: '700',
     marginTop: spacing.xs,
   },
-  syncPill: {
-    borderColor: palette.neonBlue,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  syncText: {
-    color: palette.neonBlue,
-    fontSize: typography.caption,
-    fontWeight: '900',
-  },
   planCard: {
     alignItems: 'center',
-    backgroundColor: palette.surfaceRaised,
     borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
@@ -255,7 +314,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   planTitle: {
-    color: palette.textPrimary,
     fontSize: typography.sectionTitle,
     fontWeight: '900',
     marginTop: spacing.xs,
@@ -267,21 +325,17 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   syncCard: {
-    backgroundColor: palette.surface,
-    borderColor: palette.border,
     borderRadius: radius.md,
     borderWidth: 1,
     marginTop: spacing.lg,
     padding: spacing.lg,
   },
   syncTitle: {
-    color: palette.textPrimary,
     fontSize: typography.sectionTitle,
     fontWeight: '900',
     marginBottom: spacing.xs,
   },
   syncBody: {
-    color: palette.textSecondary,
     fontSize: typography.body,
     fontWeight: '600',
     lineHeight: 22,
@@ -294,12 +348,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   sectionTitle: {
-    color: palette.textPrimary,
     fontSize: typography.sectionTitle,
     fontWeight: '900',
   },
   sectionMeta: {
-    color: palette.textMuted,
     fontSize: typography.caption,
     fontWeight: '700',
   },
@@ -314,7 +366,6 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   signOutText: {
-    color: palette.textMuted,
     fontSize: typography.caption,
     fontWeight: '800',
     letterSpacing: 0.8,

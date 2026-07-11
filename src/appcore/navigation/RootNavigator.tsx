@@ -1,8 +1,8 @@
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useSession } from '../session/SessionContext';
-import { palette } from '../../core/theme/palette';
+import { useAppTheme } from '../theme/ThemeContext';
 
 import { AgroCalcScreen } from '../../features/agrocalc/AgroCalcScreen';
 import { AgroEstoqueScreen } from '../../features/agroestoque/AgroEstoqueScreen';
@@ -19,25 +19,27 @@ import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const navigationTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: palette.background,
-    card: palette.surface,
-    primary: palette.neonBlue,
-    text: palette.textPrimary,
-    border: palette.border,
-    notification: palette.alertOrange,
-  },
-};
-
 export function RootNavigator() {
   const { session, hydrated } = useSession();
+  const { palette, mode } = useAppTheme();
 
   if (!hydrated) {
     return null;
   }
+
+  const base = mode === 'dark' ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      background: palette.background,
+      card: palette.surface,
+      primary: palette.neonBlue,
+      text: palette.textPrimary,
+      border: palette.border,
+      notification: palette.alertOrange,
+    },
+  };
 
   return (
     <NavigationContainer theme={navigationTheme}>

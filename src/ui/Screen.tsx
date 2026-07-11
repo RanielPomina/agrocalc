@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { palette } from '../core/theme/palette';
+import { useAppTheme } from '../appcore/theme/ThemeContext';
 import { spacing } from '../core/theme/layout';
 
 type Props = {
@@ -14,6 +14,7 @@ type Props = {
 
 export function Screen({ children, scroll = true, padded = true, footer }: Props) {
   const insets = useSafeAreaInsets();
+  const { palette } = useAppTheme();
 
   const content = scroll ? (
     <ScrollView
@@ -47,11 +48,20 @@ export function Screen({ children, scroll = true, padded = true, footer }: Props
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.root}
+      style={[styles.root, { backgroundColor: palette.background }]}
     >
       {content}
       {footer ? (
-        <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+        <View
+          style={[
+            styles.footer,
+            {
+              paddingBottom: insets.bottom + spacing.md,
+              backgroundColor: palette.background,
+              borderTopColor: palette.border,
+            },
+          ]}
+        >
           {footer}
         </View>
       ) : null}
@@ -61,7 +71,6 @@ export function Screen({ children, scroll = true, padded = true, footer }: Props
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: palette.background,
     flex: 1,
   },
   flex: {
@@ -71,8 +80,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   footer: {
-    backgroundColor: palette.background,
-    borderTopColor: palette.border,
     borderTopWidth: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,

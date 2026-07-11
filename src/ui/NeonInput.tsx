@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { TextInputProps } from 'react-native';
 
-import { palette } from '../core/theme/palette';
+import { useAppTheme } from '../appcore/theme/ThemeContext';
 import { radius, spacing, touchTarget } from '../core/theme/layout';
 import { typography } from '../core/theme/typography';
 
@@ -13,13 +13,14 @@ type Props = TextInputProps & {
 };
 
 export function NeonInput({ label, helper, errorText, style, ...inputProps }: Props) {
+  const { palette } = useAppTheme();
   const [focused, setFocused] = useState(false);
 
   const borderColor = errorText ? palette.danger : focused ? palette.neonBlue : palette.border;
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: palette.textSecondary }]}>{label}</Text>
       <TextInput
         {...inputProps}
         onFocus={(event) => {
@@ -31,12 +32,16 @@ export function NeonInput({ label, helper, errorText, style, ...inputProps }: Pr
           inputProps.onBlur?.(event);
         }}
         placeholderTextColor={palette.textMuted}
-        style={[styles.input, { borderColor }, style]}
+        style={[
+          styles.input,
+          { borderColor, backgroundColor: palette.surface, color: palette.textPrimary },
+          style,
+        ]}
       />
       {errorText ? (
-        <Text style={styles.errorText}>{errorText}</Text>
+        <Text style={[styles.errorText, { color: palette.danger }]}>{errorText}</Text>
       ) : helper ? (
-        <Text style={styles.helper}>{helper}</Text>
+        <Text style={[styles.helper, { color: palette.textMuted }]}>{helper}</Text>
       ) : null}
     </View>
   );
@@ -47,7 +52,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   label: {
-    color: palette.textSecondary,
     fontSize: typography.caption,
     fontWeight: '800',
     letterSpacing: 0.8,
@@ -55,10 +59,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: palette.surface,
     borderRadius: radius.md,
     borderWidth: 1,
-    color: palette.textPrimary,
     fontSize: typography.button,
     fontWeight: '700',
     minHeight: touchTarget.medium,
@@ -66,13 +68,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   helper: {
-    color: palette.textMuted,
     fontSize: typography.caption,
     fontWeight: '600',
     marginTop: spacing.xs,
   },
   errorText: {
-    color: palette.danger,
     fontSize: typography.caption,
     fontWeight: '700',
     marginTop: spacing.xs,

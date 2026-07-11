@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { palette } from '../core/theme/palette';
+import { useAppTheme } from '../appcore/theme/ThemeContext';
 import { spacing } from '../core/theme/layout';
 import { typography } from '../core/theme/typography';
 
@@ -11,12 +11,16 @@ type Props = {
   accent?: string;
 };
 
-export function ScreenHeader({ kicker, title, subtitle, accent = palette.neonBlue }: Props) {
+export function ScreenHeader({ kicker, title, subtitle, accent }: Props) {
+  const { palette } = useAppTheme();
+  const kickerColor = accent ?? palette.neonBlue;
   return (
     <View style={styles.wrap}>
-      {kicker ? <Text style={[styles.kicker, { color: accent }]}>{kicker}</Text> : null}
-      <Text style={styles.title}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      {kicker ? <Text style={[styles.kicker, { color: kickerColor }]}>{kicker}</Text> : null}
+      <Text style={[styles.title, { color: palette.textPrimary }]}>{title}</Text>
+      {subtitle ? (
+        <Text style={[styles.subtitle, { color: palette.textSecondary }]}>{subtitle}</Text>
+      ) : null}
     </View>
   );
 }
@@ -33,12 +37,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    color: palette.textPrimary,
     fontSize: typography.screenTitle,
     fontWeight: '900',
   },
   subtitle: {
-    color: palette.textSecondary,
     fontSize: typography.body,
     fontWeight: '600',
     marginTop: spacing.xs,

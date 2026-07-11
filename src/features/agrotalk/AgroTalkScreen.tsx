@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 
 import type { AgroTalkNotice } from '../../modules/agrotalk/models';
@@ -6,9 +6,10 @@ import { appendRecord, readCollection, removeRecord } from '../../core/storage/l
 import { enqueueOutboxItem } from '../../core/sync/outbox';
 import { createId } from '../../core/utils/id';
 import { formatRelativeTime } from '../../core/utils/format';
-import { palette } from '../../core/theme/palette';
 import { spacing } from '../../core/theme/layout';
 import { typography } from '../../core/theme/typography';
+import type { AppPalette } from '../../core/theme/palette';
+import { useAppTheme } from '../../appcore/theme/ThemeContext';
 import { useSession } from '../../appcore/session/SessionContext';
 import { usePlan } from '../../appcore/plan/PlanContext';
 import type { ScreenProps } from '../../appcore/navigation/types';
@@ -28,6 +29,8 @@ type Props = ScreenProps<'AgroTalk'>;
 export function AgroTalkScreen({ navigation }: Props) {
   const { session } = useSession();
   const { plan } = usePlan();
+  const { palette } = useAppTheme();
+  const styles = useMemo(() => createStyles(palette), [palette]);
   const isAdmin = session?.role === 'admin';
   const [form, setForm] = useState<FormState>(emptyForm);
   const [notices, setNotices] = useState<AgroTalkNotice[]>([]);
@@ -73,65 +76,25 @@ export function AgroTalkScreen({ navigation }: Props) {
 
   return (
     <Screen>
-      <ScreenHeader
-        kicker="Mural AgroTalk"
-        title="AgroTalk"
-        subtitle={
-          isAdmin ? 'Publique avisos para toda a equipe' : 'Avisos e prioridades do patrão'
-        }
-        accent={palette.fieldGold}
-      />
+      <ScreenHeader kicker="Mural AgroTalk" title="AgroTalk" subtitle={isAdmin ? 'Publique avisos para toda a equipe' : 'Avisos e prioridades do patrão'} accent={palette.fieldGold} />
 
-      <PrimaryButton
-        label={plan.talkProEnabled ? 'Abrir Chat da equipe' : 'Chat + Áudio (Talk Pro)'}
-        onPress={() => navigation.navigate('AgroTalkChat')}
-        icon="chat-processing-outline"
-        variant="secondary"
-      />
+      <PrimaryButton label={plan.talkProEnabled ? 'Abrir Chat da equipe' : 'Chat + Áudio (Talk Pro)'} onPress={() => navigation.navigate('AgroTalkChat')} icon="chat-processing-outline" variant="secondary" />
 
       {isAdmin ? (
         <Card title="Novo aviso do patrão" accent={palette.fieldGold}>
-          <NeonInput
-            label="Título"
-            value={form.title}
-            onChangeText={(text) => setForm((s) => ({ ...s, title: text }))}
-            placeholder="Ex.: Pulverização liberada"
-            autoCapitalize="sentences"
-          />
-          <NeonInput
-            label="Mensagem"
-            value={form.body}
-            onChangeText={(text) => setForm((s) => ({ ...s, body: text }))}
-            placeholder="Ex.: Talhão 3 após as 16h. Conferir EPI antes de iniciar."
-            multiline
-            style={{ minHeight: 120, textAlignVertical: 'top' }}
-          />
-          <PrimaryButton
-            label="Publicar aviso prioritário"
-            onPress={handlePublish}
-            icon="bullhorn-variant-outline"
-          />
+          <NeonInput label="Título" value={form.title} onChangeText={(t) => setForm((s) => ({ ...s, title: t }))} placeholder="Ex.: Pulverização liberada" autoCapitalize="sentences" />
+          <NeonInput label="Mensagem" value={form.body} onChangeText={(t) => setForm((s) => ({ ...s, body: t }))} placeholder="Ex.: Talhão 3 após as 16h. Conferir EPI antes de iniciar." multiline style={{ minHeight: 120, textAlignVertical: 'top' }} />
+          <PrimaryButton label="Publicar aviso prioritário" onPress={handlePublish} icon="bullhorn-variant-outline" />
         </Card>
       ) : (
         <Card title="Somente leitura" accent={palette.textSecondary}>
-          <Text style={styles.body}>
-            Apenas o patrão publica avisos no mural. Você recebe os avisos aqui e no card fixo da
-            Home.
-          </Text>
+          <Text style={styles.body}>Apenas o patrão publica avisos no mural. Você recebe os avisos aqui e no card fixo da Home.</Text>
         </Card>
       )}
 
       <Text style={styles.sectionTitle}>Avisos publicados ({notices.length})</Text>
       {notices.length === 0 ? (
-        <EmptyState
-          icon="bullhorn-variant-outline"
-          title="Sem avisos ainda"
-          description={
-            isAdmin
-              ? 'Publique o primeiro aviso para toda a equipe.'
-              : 'Quando o patrão publicar um aviso, ele aparece aqui.'
-          }
-        />
+        <EmptyState icon="bullhorn-variant-outline" title="Sem avisos ainda" description={isAdmin ? 'Publique o primeiro aviso para toda a equipe.' : 'Quando o patrão publicar um aviso, ele aparece aqui.'} />
       ) : (
         <FlatList
           data={notices}
@@ -147,17 +110,7 @@ export function AgroTalkScreen({ navigation }: Props) {
               <Text style={styles.noticeBody}>{item.body}</Text>
               <Text style={styles.noticeAuthor}>Enviado por {item.authorName}</Text>
               {isAdmin ? (
-                <PrimaryButton
-                  label="Remover"
-                  variant="ghost"
-                  icon="trash-can-outline"
-                  onPress={() =>
-                    Alert.alert('Remover aviso', `Excluir "${item.title}"?`, [
-                      { text: 'Cancelar', style: 'cancel' },
-                      { text: 'Remover', style: 'destructive', onPress: () => handleRemove(item.id) },
-                    ])
-                  }
-                />
+                <PrimaryButton label="Remover" variant="ghost" icon="trash-can-outline" onPress={() => Alert.alert('Remover aviso', `Excluir "${item.title}"?`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Remover', style: 'destructive', onPress: () => handleRemove(item.id) }])} />
               ) : null}
             </View>
           )}
@@ -167,53 +120,14 @@ export function AgroTalkScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  body: {
-    color: palette.textSecondary,
-    fontSize: typography.body,
-    fontWeight: '600',
-    lineHeight: 22,
-  },
-  sectionTitle: {
-    color: palette.textPrimary,
-    fontSize: typography.sectionTitle,
-    fontWeight: '900',
-    marginBottom: spacing.md,
-    marginTop: spacing.md,
-  },
-  notice: {
-    backgroundColor: palette.fieldGold,
-    borderRadius: 12,
-    padding: spacing.lg,
-  },
-  noticeHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  noticeTitle: {
-    color: palette.black,
-    flex: 1,
-    fontSize: typography.sectionTitle,
-    fontWeight: '900',
-  },
-  noticeTime: {
-    color: '#3C2500',
-    fontSize: typography.caption,
-    fontWeight: '800',
-  },
-  noticeBody: {
-    color: '#201700',
-    fontSize: typography.body,
-    fontWeight: '700',
-    lineHeight: 22,
-    marginBottom: spacing.sm,
-  },
-  noticeAuthor: {
-    color: '#4B3300',
-    fontSize: typography.caption,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
-  },
-});
+const createStyles = (palette: AppPalette) =>
+  StyleSheet.create({
+    body: { color: palette.textSecondary, fontSize: typography.body, fontWeight: '600', lineHeight: 22 },
+    sectionTitle: { color: palette.textPrimary, fontSize: typography.sectionTitle, fontWeight: '900', marginBottom: spacing.md, marginTop: spacing.md },
+    notice: { backgroundColor: palette.fieldGold, borderRadius: 12, padding: spacing.lg },
+    noticeHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
+    noticeTitle: { color: palette.black, flex: 1, fontSize: typography.sectionTitle, fontWeight: '900' },
+    noticeTime: { color: '#3C2500', fontSize: typography.caption, fontWeight: '800' },
+    noticeBody: { color: '#201700', fontSize: typography.body, fontWeight: '700', lineHeight: 22, marginBottom: spacing.sm },
+    noticeAuthor: { color: '#4B3300', fontSize: typography.caption, fontWeight: '700', marginBottom: spacing.sm },
+  });

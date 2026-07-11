@@ -3,7 +3,7 @@ import * as Linking from 'expo-linking';
 import * as Location from 'expo-location';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { palette } from '../../../core/theme/palette';
+import { useAppTheme } from '../../../appcore/theme/ThemeContext';
 import { radius, spacing, touchTarget } from '../../../core/theme/layout';
 import { typography } from '../../../core/theme/typography';
 
@@ -32,16 +32,21 @@ async function shareEmergencyLocation() {
 }
 
 export function SosButton() {
+  const { palette } = useAppTheme();
   return (
     <View style={styles.wrap}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Botao SOS. Compartilhar localizacao de emergencia"
         onPress={shareEmergencyLocation}
-        style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.button,
+          { backgroundColor: palette.danger },
+          pressed && styles.pressed,
+        ]}
       >
         <MaterialCommunityIcons name="alarm-light-outline" size={28} color={palette.textPrimary} />
-        <Text style={styles.title}>SOS Campo</Text>
+        <Text style={[styles.title, { color: palette.textPrimary }]}>SOS Campo</Text>
         <Text style={styles.subtitle}>Enviar latitude e longitude</Text>
       </Pressable>
     </View>
@@ -54,7 +59,6 @@ const styles = StyleSheet.create({
   },
   button: {
     alignItems: 'center',
-    backgroundColor: palette.danger,
     borderRadius: radius.lg,
     flexDirection: 'row',
     gap: spacing.md,
@@ -67,7 +71,6 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
   title: {
-    color: palette.textPrimary,
     flexShrink: 0,
     fontSize: typography.button,
     fontWeight: '900',

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
 
-import { palette } from '../core/theme/palette';
+import { useAppTheme } from '../appcore/theme/ThemeContext';
 import { radius, spacing } from '../core/theme/layout';
 import { typography } from '../core/theme/typography';
 
@@ -14,13 +14,23 @@ type Props = {
   style?: ViewStyle;
 };
 
-export function Card({ title, subtitle, accent = palette.neonBlue, children, style }: Props) {
+export function Card({ title, subtitle, accent, children, style }: Props) {
+  const { palette } = useAppTheme();
+  const titleColor = accent ?? palette.neonBlue;
   return (
-    <View style={[styles.card, style]}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: palette.surface, borderColor: palette.border },
+        style,
+      ]}
+    >
       {title || subtitle ? (
         <View style={styles.header}>
-          {title ? <Text style={[styles.title, { color: accent }]}>{title}</Text> : null}
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          {title ? <Text style={[styles.title, { color: titleColor }]}>{title}</Text> : null}
+          {subtitle ? (
+            <Text style={[styles.subtitle, { color: palette.textPrimary }]}>{subtitle}</Text>
+          ) : null}
         </View>
       ) : null}
       {children}
@@ -30,8 +40,6 @@ export function Card({ title, subtitle, accent = palette.neonBlue, children, sty
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: palette.surface,
-    borderColor: palette.border,
     borderRadius: radius.md,
     borderWidth: 1,
     marginBottom: spacing.md,
@@ -47,7 +55,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   subtitle: {
-    color: palette.textPrimary,
     fontSize: typography.sectionTitle,
     fontWeight: '800',
     marginTop: spacing.xs,

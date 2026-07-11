@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { palette } from '../../../core/theme/palette';
+import { useAppTheme } from '../../../appcore/theme/ThemeContext';
 import { radius, spacing } from '../../../core/theme/layout';
 import { typography } from '../../../core/theme/typography';
 import type { AgroTalkNotice } from '../../../modules/agrotalk/models';
@@ -11,17 +11,18 @@ type Props = {
 };
 
 export function AgroTalkNoticeCard({ notice }: Props) {
+  const { palette } = useAppTheme();
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: palette.fieldGold, shadowColor: palette.fieldGold }]}>
       <View style={styles.headerRow}>
-        <View style={styles.badge}>
+        <View style={[styles.badge, { backgroundColor: 'rgba(0,0,0,0.12)' }]}>
           <MaterialCommunityIcons name="bullhorn-variant-outline" size={20} color={palette.black} />
-          <Text style={styles.badgeText}>Mural AgroTalk</Text>
+          <Text style={[styles.badgeText, { color: palette.black }]}>Mural AgroTalk</Text>
         </View>
         <Text style={styles.time}>Agora</Text>
       </View>
 
-      <Text style={styles.title}>{notice.title}</Text>
+      <Text style={[styles.title, { color: palette.black }]}>{notice.title}</Text>
       <Text style={styles.body}>{notice.body}</Text>
       <Text style={styles.author}>Enviado por {notice.authorName}</Text>
     </View>
@@ -30,10 +31,8 @@ export function AgroTalkNoticeCard({ notice }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: palette.fieldGold,
     borderRadius: radius.lg,
     padding: spacing.lg,
-    shadowColor: palette.fieldGold,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.28,
     shadowRadius: 18,
@@ -47,7 +46,6 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.12)',
     borderRadius: radius.pill,
     flexDirection: 'row',
     gap: spacing.sm,
@@ -55,7 +53,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   badgeText: {
-    color: palette.black,
     fontSize: typography.caption,
     fontWeight: '800',
     textTransform: 'uppercase',
@@ -66,7 +63,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   title: {
-    color: palette.black,
     fontSize: 24,
     fontWeight: '900',
     marginBottom: spacing.sm,
