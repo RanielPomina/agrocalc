@@ -1,3 +1,7 @@
+// Polyfill obrigatorio do @supabase/supabase-js em React Native.
+// Precisa ser o PRIMEIRO import de todos (antes de qualquer outro modulo).
+import 'react-native-url-polyfill/auto';
+
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
