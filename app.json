@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "AgroSafra",
+    "slug": "agrosafra",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "agrosafra",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.agrosafra.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
+  }
+}
