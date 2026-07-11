@@ -6,8 +6,6 @@
     "orientation": "portrait",
     "scheme": "agrosafra",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
-    "jsEngine": "hermes",
     "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.agrosafra.app",
@@ -19,6 +17,17 @@
         "ACCESS_NETWORK_STATE"
       ]
     },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": false
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "8e1b72f1-8bbd-493b-a5ab-d5c8e3c9d2f7"
