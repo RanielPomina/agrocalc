@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import * as Network from 'expo-network';
 
 import { createSyncCoordinator } from '../sync/createSyncCoordinator';
 import { readOutbox } from '../sync/outbox';
@@ -9,8 +8,21 @@ export type ConnectivitySnapshot = {
   type: string | null;
 };
 
+async function loadNetwork(): Promise<any | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-network');
+  } catch {
+    return null;
+  }
+}
+
 export async function checkConnectivity(): Promise<ConnectivitySnapshot> {
   try {
+    const Network = await loadNetwork();
+    if (!Network || typeof Network.getNetworkStateAsync !== 'function') {
+      return { isInternetReachable: null, type: null };
+    }
     const state = await Network.getNetworkStateAsync();
     return {
       isInternetReachable: state.isInternetReachable ?? state.isConnected ?? null,
@@ -23,31 +35,37 @@ export async function checkConnectivity(): Promise<ConnectivitySnapshot> {
 
 /**
  * Faz polling leve de conectividade e dispara flush da Outbox quando fica online.
- * Só flusha se houver itens na fila para evitar chamadas ociosas.
+ * Se `expo-network` não estiver disponível, vira no-op silencioso.
  */
-export function useAutoSyncOnOnline(intervalMs = 15_000): void {
+export function useAutoSyncOnOnline(intervalMs = 30_000): void {
   const wasOnline = useRef<boolean>(false);
   const syncing = useRef<boolean>(false);
 
   useEffect(() => {
-    const coordinator = createSyncCoordinator();
+    let alive = true;
+    let coordinator: ReturnType<typeof createSyncCoordinator> | null = null;
+    try {
+      coordinator = createSyncCoordinator();
+    } catch {
+      coordinator = null;
+    }
 
     async function tick() {
-      if (syncing.current) return;
+      if (!alive || syncing.current || !coordinator) return;
       const snapshot = await checkConnectivity();
       const online = snapshot.isInternetReachable === true;
 
       if (online && !wasOnline.current) {
-        const pending = await readOutbox();
-        if (pending.length > 0) {
-          syncing.current = true;
-          try {
+        try {
+          const pending = await readOutbox();
+          if (pending.length > 0) {
+            syncing.current = true;
             await coordinator.syncNow();
-          } catch {
-            /* silencioso: próximo ciclo tenta de novo */
-          } finally {
-            syncing.current = false;
           }
+        } catch {
+          /* silencioso: próximo ciclo tenta de novo */
+        } finally {
+          syncing.current = false;
         }
       }
       wasOnline.current = online;
@@ -58,6 +76,9 @@ export function useAutoSyncOnOnline(intervalMs = 15_000): void {
       void tick();
     }, intervalMs);
 
-    return () => clearInterval(timer);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
   }, [intervalMs]);
 }

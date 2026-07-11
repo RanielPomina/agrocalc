@@ -7,10 +7,14 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootErrorBoundary } from './src/appcore/error/RootErrorBoundary';
+import { installGlobalErrorLogger } from './src/appcore/error/globalErrorLogger';
 import { RootNavigator } from './src/appcore/navigation/RootNavigator';
 import { PlanProvider } from './src/appcore/plan/PlanContext';
 import { SessionProvider } from './src/appcore/session/SessionContext';
 import { ThemeProvider, useAppTheme } from './src/appcore/theme/ThemeContext';
+
+// Instala captura global antes de qualquer render
+installGlobalErrorLogger();
 
 function ThemedStatusBar() {
   const { mode } = useAppTheme();

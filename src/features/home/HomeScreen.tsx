@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../../appcore/session/SessionContext';
 import { usePlan } from '../../appcore/plan/PlanContext';
 import { useAppTheme } from '../../appcore/theme/ThemeContext';
+import { clearStoredCrashLog, readStoredCrashLog } from '../../appcore/error/globalErrorLogger';
 import type { RootStackParamList, ScreenProps } from '../../appcore/navigation/types';
 import { useAutoSyncOnOnline } from '../../core/network/connectivity';
 import { readCollection } from '../../core/storage/localStore';
@@ -39,6 +40,17 @@ export function HomeScreen({ navigation }: Props) {
   const [syncing, setSyncing] = useState(false);
 
   useAutoSyncOnOnline();
+
+  useEffect(() => {
+    void readStoredCrashLog().then((log) => {
+      if (!log) return;
+      Alert.alert(
+        'Sessão anterior travou',
+        `${log.message}\n\nQuando: ${new Date(log.when).toLocaleString('pt-BR')}\n\nO app registrou este erro para diagnostico.`,
+        [{ text: 'OK, apagar', onPress: () => clearStoredCrashLog() }],
+      );
+    });
+  }, []);
 
   const loadNotice = useCallback(async () => {
     const stored = await readCollection<AgroTalkNotice>('notices');
