@@ -2,30 +2,42 @@
 
 MVP mobile Android offline-first para operacao agricola leve, com Home em estilo Dark Cyber, modulos locais e base reaproveitavel para a trilogia AgroSafra, AgroPecuaria e AgroLogistica.
 
-## Arquitetura inicial
+## O que ja funciona
+
+- Onboarding local: perfil (nome + Patrao/Funcionario + codigo de grupo) salvo no aparelho.
+- Home Dark Cyber com card de aviso AgroTalk, botao "Sede Sync" funcional, atalhos para 5 modulos, botao SOS que compartilha localizacao no WhatsApp.
+- **AgroCalc**: form + calculo instantaneo + historico local.
+- **AgroEstoque**: entradas/saidas/ajustes com saldo por item/unidade.
+- **AgroLog**: iniciar / finalizar atividade por talhao, com observacoes.
+- **AgroManual**: patrao cria receitas com passos e alertas de seguranca; funcionario le.
+- **AgroTalk**: patrao publica avisos que vao para o mural e para a Outbox de sincronizacao.
+- **Clima**: previsao simples via Open-Meteo (gratis, sem chave), com cache offline.
+- **Sync coordenador**: tenta Cloud (Supabase, se configurado) e depois AgroSync Local (P2P).
+
+## Arquitetura
 
 ```text
 .
-|-- App.tsx
+|-- App.tsx                       # Providers + navegacao
 |-- app.json
 |-- package.json
 |-- src
+|   |-- app
+|   |   |-- navigation            # RootNavigator + types (React Navigation)
+|   |   `-- session               # SessionContext + storage local
 |   |-- core
-|   |   |-- cloud              # Contratos Firebase/Auth/Firestore
-|   |   |-- p2p                # AgroSync Local / rede local
-|   |   |-- storage            # Persistencia local offline-first
-|   |   |-- sync               # Outbox e coordenador de sincronizacao
-|   |   `-- theme              # Paleta Dark Cyber e tokens de UI
+|   |   |-- cloud                 # Firebase schema + Supabase client/gateway
+|   |   |-- p2p                   # AgroSync Local / rede local
+|   |   |-- storage               # AsyncStorage tipado
+|   |   |-- sync                  # Outbox + coordinator
+|   |   |-- theme                 # Paleta Dark Cyber, layout, typography
+|   |   `-- utils                 # id + format (BRL, datas)
 |   |-- features
-|   |   `-- home               # Dashboard principal
-|   `-- modules
-|       |-- agrocalc           # Calculos de insumos e rendimento
-|       |-- agroestoque        # Balanco de galpao
-|       |-- agrolog            # Diario de bordo
-|       |-- agromanual         # Receitas tecnicas
-|       |-- agrotalk           # Avisos, chat, audio inteligente
-|       |-- climate            # Previsao simples
-|       `-- monetization       # Planos, ads e billing
+|   |   |-- agrocalc, agroestoque, agrolog, agromanual, clima, agrotalk
+|   |   |-- home                  # Dashboard principal
+|   |   `-- onboarding
+|   |-- modules                   # Modelos e regras puras por dominio
+|   `-- ui                        # Screen, ScreenHeader, PrimaryButton, NeonInput, Card, EmptyState
 ```
 
 ## Rodar localmente
@@ -64,6 +76,17 @@ npm run start:railway
 
 O arquivo [railway.json](railway.json) configura o Railway para rodar `npm run build:web` e servir a pasta `dist`.
 
+## Backend opcional (Supabase)
+
+O app funciona 100% offline. Se quiser ligar a nuvem via Supabase, copie `.env.example` para `.env` e preencha:
+
+```text
+EXPO_PUBLIC_SUPABASE_URL=...
+EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+```
+
+Se as variaveis existirem, o coordenador de sync usa `SupabaseSyncGateway` como canal Cloud automaticamente.
+
 ## Seguranca de dependencias
 
 O projeto foi atualizado para Expo 57 e usa `overrides.uuid` para corrigir a cadeia transitiva `@expo/config-plugins -> xcode -> uuid`.
@@ -81,7 +104,7 @@ npm run build:web
 
 - UI feita em React Native/Expo para acelerar entrega Android sem prender a base em uma tela unica.
 - Historicos locais e Outbox ficam atras de `src/core/storage`, hoje com AsyncStorage para leveza no MVP. A camada permite migrar para SQLite/WatermelonDB sem alterar as telas.
-- Firebase fica limitado aos dados compartilhados: grupos, membros, avisos e chat recente.
+- Cloud tem dois gateways intercambiaveis: `SupabaseSyncGateway` (usado quando `EXPO_PUBLIC_SUPABASE_URL` esta setado) ou `CloudSyncGateway` stub (fallback).
 - AgroSync Local foi isolado em `src/core/p2p` para receber uma implementacao nativa futura via NSD, Wi-Fi Direct ou WebSockets locais.
 - Audio Talk Pro possui modelo de expiracao em 48h e flag `saved` para impedir limpeza automatica.
 

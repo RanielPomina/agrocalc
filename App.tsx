@@ -1,13 +1,19 @@
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { HomeScreen } from './src/features/home/HomeScreen';
+import { RootNavigator } from './src/appcore/navigation/RootNavigator';
+import { SessionProvider } from './src/appcore/session/SessionContext';
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <HomeScreen />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <SessionProvider>
+          <StatusBar style="light" />
+          <RootNavigator />
+        </SessionProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

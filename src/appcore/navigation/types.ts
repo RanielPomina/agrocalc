@@ -1,0 +1,17 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+export type RootStackParamList = {
+  Onboarding: undefined;
+  Home: undefined;
+  AgroTalk: undefined;
+  AgroCalc: undefined;
+  AgroEstoque: undefined;
+  AgroLog: undefined;
+  AgroManual: undefined;
+  Clima: undefined;
+};
+
+export type ScreenProps<Route extends keyof RootStackParamList> = NativeStackScreenProps<
+  RootStackParamList,
+  Route
+>;
