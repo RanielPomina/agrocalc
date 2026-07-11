@@ -28,6 +28,7 @@ const routeByFeature: Record<string, keyof RootStackParamList> = {
   agroestoque: 'AgroEstoque',
   agromanual: 'AgroManual',
   agrolog: 'AgroLog',
+  agrotarefas: 'AgroTarefas',
   clima: 'Clima',
 };
 

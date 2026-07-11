@@ -8,7 +8,8 @@ export type LocalCollection =
   | 'outbox'
   | 'notices'
   | 'recipes'
-  | 'chatMessages';
+  | 'chatMessages'
+  | 'tasks';
 
 export type LocalDocKey = 'session' | 'climateCache' | 'planState' | 'themeMode' | 'crashLog';
 

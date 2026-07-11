@@ -10,6 +10,7 @@ import { AgroLogScreen } from '../../features/agrolog/AgroLogScreen';
 import { AgroManualScreen } from '../../features/agromanual/AgroManualScreen';
 import { AgroTalkScreen } from '../../features/agrotalk/AgroTalkScreen';
 import { ChatScreen } from '../../features/agrotalk/ChatScreen';
+import { AgroTarefasScreen } from '../../features/agrotarefas/AgroTarefasScreen';
 import { ClimaScreen } from '../../features/clima/ClimaScreen';
 import { HomeScreen } from '../../features/home/HomeScreen';
 import { OnboardingScreen } from '../../features/onboarding/OnboardingScreen';
@@ -73,6 +74,11 @@ export function RootNavigator() {
               options={{ title: 'AgroManual' }}
             />
             <Stack.Screen name="Clima" component={ClimaScreen} options={{ title: 'Clima' }} />
+            <Stack.Screen
+              name="AgroTarefas"
+              component={AgroTarefasScreen}
+              options={{ title: 'Tarefas' }}
+            />
             <Stack.Screen name="Plan" component={PlanScreen} options={{ title: 'Planos' }} />
           </>
         ) : (

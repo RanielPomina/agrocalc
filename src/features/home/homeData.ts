@@ -31,6 +31,13 @@ export const featureActions: FeatureAction[] = [
     accent: palette.success,
   },
   {
+    id: 'agrotarefas',
+    title: 'Tarefas',
+    subtitle: 'Objetivos do dia com checklist',
+    icon: 'checkbox-marked-circle-outline',
+    accent: palette.neonPurple,
+  },
+  {
     id: 'clima',
     title: 'Clima',
     subtitle: 'Previsão simples do tempo',

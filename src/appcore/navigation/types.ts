@@ -9,6 +9,7 @@ export type RootStackParamList = {
   AgroEstoque: undefined;
   AgroLog: undefined;
   AgroManual: undefined;
+  AgroTarefas: undefined;
   Clima: undefined;
   Plan: undefined;
 };
