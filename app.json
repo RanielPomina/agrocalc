@@ -13,34 +13,10 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS",
         "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "ACCESS_WIFI_STATE"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": false,
-          "data": [{ "scheme": "agrosafra" }],
-          "category": ["BROWSABLE", "DEFAULT"]
-        }
+        "ACCESS_NETWORK_STATE"
       ]
     },
-    "plugins": [
-      [
-        "expo-av",
-        {
-          "microphonePermission": "AgroSafra usa o microfone para gravar áudios do Talk Pro."
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "AgroSafra usa a localização para o botão SOS e para o Clima."
-        }
-      ]
-    ],
     "extra": {
       "eas": {
         "projectId": "8e1b72f1-8bbd-493b-a5ab-d5c8e3c9d2f7"
