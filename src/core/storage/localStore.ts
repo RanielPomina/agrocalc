@@ -10,7 +10,7 @@ export type LocalCollection =
   | 'recipes'
   | 'chatMessages';
 
-export type LocalDocKey = 'session' | 'climateCache';
+export type LocalDocKey = 'session' | 'climateCache' | 'planState';
 
 const namespace = 'agrosafra:v1';
 

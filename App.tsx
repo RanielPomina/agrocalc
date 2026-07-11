@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootNavigator } from './src/appcore/navigation/RootNavigator';
+import { PlanProvider } from './src/appcore/plan/PlanContext';
 import { SessionProvider } from './src/appcore/session/SessionContext';
 
 export default function App() {
@@ -10,8 +11,10 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SessionProvider>
-          <StatusBar style="light" />
-          <RootNavigator />
+          <PlanProvider>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </PlanProvider>
         </SessionProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

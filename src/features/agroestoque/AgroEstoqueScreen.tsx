@@ -6,6 +6,8 @@ import type { StockMovement, StockMovementType } from '../../modules/agroestoque
 import { appendRecord, readCollection, removeRecord } from '../../core/storage/localStore';
 import { createId } from '../../core/utils/id';
 import { formatDateTimeBR, formatNumberBR, parseLocaleNumber } from '../../core/utils/format';
+import { buildStockReport } from '../../core/utils/reports';
+import { shareViaWhatsApp } from '../../core/utils/whatsapp';
 import { palette } from '../../core/theme/palette';
 import { spacing } from '../../core/theme/layout';
 import { typography } from '../../core/theme/typography';
@@ -78,6 +80,14 @@ export function AgroEstoqueScreen() {
     setMovements(await readCollection<StockMovement>('stockLedger'));
   }
 
+  async function handleShare() {
+    if (movements.length === 0 && balances.length === 0) {
+      Alert.alert('Sem dados', 'Registre pelo menos um movimento antes de compartilhar.');
+      return;
+    }
+    await shareViaWhatsApp(buildStockReport(movements, balances));
+  }
+
   return (
     <Screen>
       <ScreenHeader
@@ -85,6 +95,13 @@ export function AgroEstoqueScreen() {
         title="AgroEstoque"
         subtitle="Balanço de galpão offline por entradas e saídas"
         accent={palette.fieldGold}
+      />
+
+      <PrimaryButton
+        label="Compartilhar balanço no WhatsApp"
+        onPress={handleShare}
+        icon="whatsapp"
+        variant="secondary"
       />
 
       <Card title="Novo movimento" accent={palette.fieldGold}>

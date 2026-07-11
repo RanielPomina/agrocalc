@@ -10,23 +10,30 @@ import { palette } from '../../core/theme/palette';
 import { spacing } from '../../core/theme/layout';
 import { typography } from '../../core/theme/typography';
 import { useSession } from '../../appcore/session/SessionContext';
+import { usePlan } from '../../appcore/plan/PlanContext';
+import type { ScreenProps } from '../../appcore/navigation/types';
 import { Card } from '../../ui/Card';
 import { EmptyState } from '../../ui/EmptyState';
 import { NeonInput } from '../../ui/NeonInput';
 import { PrimaryButton } from '../../ui/PrimaryButton';
 import { Screen } from '../../ui/Screen';
 import { ScreenHeader } from '../../ui/ScreenHeader';
+import { purgeExpiredChatAudio } from './audio/audioService';
 
 type FormState = { title: string; body: string };
 const emptyForm: FormState = { title: '', body: '' };
 
-export function AgroTalkScreen() {
+type Props = ScreenProps<'AgroTalk'>;
+
+export function AgroTalkScreen({ navigation }: Props) {
   const { session } = useSession();
+  const { plan } = usePlan();
   const isAdmin = session?.role === 'admin';
   const [form, setForm] = useState<FormState>(emptyForm);
   const [notices, setNotices] = useState<AgroTalkNotice[]>([]);
 
   useEffect(() => {
+    void purgeExpiredChatAudio();
     readCollection<AgroTalkNotice>('notices').then(setNotices);
   }, []);
 
@@ -73,6 +80,13 @@ export function AgroTalkScreen() {
           isAdmin ? 'Publique avisos para toda a equipe' : 'Avisos e prioridades do patrão'
         }
         accent={palette.fieldGold}
+      />
+
+      <PrimaryButton
+        label={plan.talkProEnabled ? 'Abrir Chat da equipe' : 'Chat + Áudio (Talk Pro)'}
+        onPress={() => navigation.navigate('AgroTalkChat')}
+        icon="chat-processing-outline"
+        variant="secondary"
       />
 
       {isAdmin ? (

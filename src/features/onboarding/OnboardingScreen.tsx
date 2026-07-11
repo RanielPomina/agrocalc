@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Share, StyleSheet, Text, View } from 'react-native';
+import * as Linking from 'expo-linking';
 
 import { useSession } from '../../appcore/session/SessionContext';
 import type { SessionRole } from '../../appcore/session/sessionStorage';
+import { buildJoinLink, generateGroupCode, parseJoinLink } from '../../core/utils/groupCode';
 import { palette } from '../../core/theme/palette';
 import { spacing } from '../../core/theme/layout';
 import { typography } from '../../core/theme/typography';
@@ -19,16 +21,55 @@ export function OnboardingScreen() {
   const [groupCode, setGroupCode] = useState('');
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    let alive = true;
+    Linking.getInitialURL().then((initial) => {
+      const parsed = parseJoinLink(initial);
+      if (alive && parsed) {
+        setGroupCode(parsed);
+        setRole('worker');
+      }
+    });
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      const parsed = parseJoinLink(url);
+      if (parsed) {
+        setGroupCode(parsed);
+        setRole('worker');
+      }
+    });
+    return () => {
+      alive = false;
+      sub.remove();
+    };
+  }, []);
+
+  function handleGenerateCode() {
+    const code = generateGroupCode();
+    setGroupCode(code);
+  }
+
+  async function handleShareLink() {
+    if (!groupCode.trim()) {
+      Alert.alert('Sem código', 'Gere um código de grupo antes de compartilhar o convite.');
+      return;
+    }
+    const link = buildJoinLink(groupCode.trim().toUpperCase());
+    await Share.share({
+      message: `Convite AgroSafra 🌾\nCódigo do grupo: ${groupCode}\nAbra o link: ${link}`,
+    });
+  }
+
   async function handleStart() {
     if (!name.trim()) {
       Alert.alert('Nome obrigatório', 'Informe como você quer ser identificado.');
       return;
     }
     setSaving(true);
+    const finalCode = groupCode.trim().toUpperCase() || `${role === 'admin' ? 'FZ' : 'GR'}-${generateGroupCode(4)}`;
     await signIn({
       displayName: name.trim(),
       role,
-      groupCode: groupCode.trim() || `grupo-${role}`,
+      groupCode: finalCode,
       createdAt: new Date().toISOString(),
     });
     setSaving(false);
@@ -69,13 +110,38 @@ export function OnboardingScreen() {
         </View>
 
         <NeonInput
-          label="Código do grupo (opcional)"
+          label="Código do grupo"
           value={groupCode}
-          onChangeText={setGroupCode}
-          placeholder="Ex.: FAZENDA-123"
+          onChangeText={(text) => setGroupCode(text.toUpperCase())}
+          placeholder={role === 'admin' ? 'Ex.: FAZENDA123 (ou gere um)' : 'Cole o código enviado pelo patrão'}
           autoCapitalize="characters"
-          helper="Se você é funcionário, use o código enviado pelo patrão. Pode preencher depois."
+          helper={
+            role === 'admin'
+              ? 'Gere um código, salve o app e depois compartilhe o link com sua equipe.'
+              : 'Use o código enviado no convite do patrão (ou abra o link direto do WhatsApp).'
+          }
         />
+
+        {role === 'admin' ? (
+          <View style={styles.adminActions}>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton
+                label="Gerar código"
+                onPress={handleGenerateCode}
+                icon="dice-multiple-outline"
+                variant="secondary"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton
+                label="Compartilhar convite"
+                onPress={handleShareLink}
+                icon="share-variant-outline"
+                variant="ghost"
+              />
+            </View>
+          </View>
+        ) : null}
 
         <PrimaryButton
           label={saving ? 'Entrando...' : 'Começar a usar'}
@@ -86,8 +152,8 @@ export function OnboardingScreen() {
       </Card>
 
       <Text style={styles.footNote}>
-        Nada é enviado agora: seu perfil fica salvo somente neste aparelho até você conectar um
-        backend (Firebase ou Supabase) em uma próxima versão.
+        Nada é enviado agora: seu perfil fica salvo somente neste aparelho. Quando você ligar o
+        Supabase, o código do grupo passa a ser reconhecido pelos outros dispositivos.
       </Text>
     </Screen>
   );
@@ -158,6 +224,11 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     fontWeight: '600',
     lineHeight: 16,
+  },
+  adminActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   footNote: {
     color: palette.textMuted,

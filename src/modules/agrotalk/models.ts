@@ -26,3 +26,18 @@ export type AgroTalkMember = {
   role: AgroTalkRole;
   canSendPriorityMessage: boolean;
 };
+
+export type ChatMessage = {
+  id: string;
+  groupId: string;
+  authorName: string;
+  authorRole: AgroTalkRole;
+  body?: string;
+  audioUri?: string;
+  audioDurationMs?: number;
+  audioCodec?: 'aac' | 'opus';
+  audioSaved?: boolean;
+  audioExpiresAt?: string;
+  priority: boolean;
+  createdAt: string;
+};

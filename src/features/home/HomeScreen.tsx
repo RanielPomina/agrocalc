@@ -3,7 +3,9 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '../../appcore/session/SessionContext';
+import { usePlan } from '../../appcore/plan/PlanContext';
 import type { RootStackParamList, ScreenProps } from '../../appcore/navigation/types';
+import { useAutoSyncOnOnline } from '../../core/network/connectivity';
 import { readCollection } from '../../core/storage/localStore';
 import { createSyncCoordinator } from '../../core/sync/createSyncCoordinator';
 import { palette } from '../../core/theme/palette';
@@ -30,8 +32,11 @@ const routeByFeature: Record<string, keyof RootStackParamList> = {
 export function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { session, signOut } = useSession();
+  const { plan } = usePlan();
   const [notice, setNotice] = useState<AgroTalkNotice>(currentNotice);
   const [syncing, setSyncing] = useState(false);
+
+  useAutoSyncOnOnline();
 
   const loadNotice = useCallback(async () => {
     const stored = await readCollection<AgroTalkNotice>('notices');
@@ -90,6 +95,13 @@ export function HomeScreen({ navigation }: Props) {
     ]);
   }, [signOut]);
 
+  const planAccent =
+    plan.code === 'talk-pro'
+      ? palette.neonPurple
+      : plan.code === 'operational'
+      ? palette.neonBlue
+      : palette.textMuted;
+
   return (
     <View style={styles.root}>
       <ScrollView
@@ -106,6 +118,7 @@ export function HomeScreen({ navigation }: Props) {
             {session ? (
               <Text style={styles.userLine}>
                 {session.role === 'admin' ? '👑 Patrão' : '🧑‍🌾 Funcionário'} · {session.displayName}
+                {session.groupCode ? `  ·  ${session.groupCode}` : ''}
               </Text>
             ) : null}
           </View>
@@ -119,6 +132,21 @@ export function HomeScreen({ navigation }: Props) {
             <Text style={styles.syncText}>{syncing ? '...' : 'Sede Sync'}</Text>
           </Pressable>
         </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Plano ativo: ${plan.title}. Trocar plano.`}
+          onPress={() => navigation.navigate('Plan')}
+          style={[styles.planCard, { borderColor: planAccent }]}
+        >
+          <View>
+            <Text style={[styles.planKicker, { color: planAccent }]}>Plano</Text>
+            <Text style={styles.planTitle}>{plan.title}</Text>
+          </View>
+          <Text style={[styles.planLink, { color: planAccent }]}>
+            {plan.adsEnabled ? 'Com anúncios · Trocar' : 'Trocar'}
+          </Text>
+        </Pressable>
 
         <Pressable
           accessibilityRole="button"
@@ -138,7 +166,7 @@ export function HomeScreen({ navigation }: Props) {
           <Text style={styles.syncTitle}>AgroSync Local</Text>
           <Text style={styles.syncBody}>
             No Wi-Fi da sede, toque para descarregar avisos, chat e AgroLog sem gastar dados
-            móveis.
+            móveis. Quando ficar online, a fila é enviada automaticamente.
           </Text>
         </Pressable>
 
@@ -209,6 +237,34 @@ const styles = StyleSheet.create({
     color: palette.neonBlue,
     fontSize: typography.caption,
     fontWeight: '900',
+  },
+  planCard: {
+    alignItems: 'center',
+    backgroundColor: palette.surfaceRaised,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+    padding: spacing.md,
+  },
+  planKicker: {
+    fontSize: typography.caption,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  planTitle: {
+    color: palette.textPrimary,
+    fontSize: typography.sectionTitle,
+    fontWeight: '900',
+    marginTop: spacing.xs,
+  },
+  planLink: {
+    fontSize: typography.caption,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   syncCard: {
     backgroundColor: palette.surface,

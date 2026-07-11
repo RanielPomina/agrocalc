@@ -13,11 +13,42 @@
       "package": "com.agrosafra.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [
+            {
+              "scheme": "agrosafra",
+              "host": "join"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "plugins": [
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-sharing",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "AgroSafra usa o microfone para gravar áudios do Talk Pro."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "AgroSafra usa a localização para o botão SOS e para o Clima."
+        }
+      ]
     ],
     "extra": {
       "eas": {

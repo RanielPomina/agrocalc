@@ -5,6 +5,8 @@ import type { AgroLogEntry } from '../../modules/agrolog/models';
 import { appendRecord, readCollection, removeRecord, updateRecord } from '../../core/storage/localStore';
 import { createId } from '../../core/utils/id';
 import { formatDateTimeBR } from '../../core/utils/format';
+import { buildAgroLogReport } from '../../core/utils/reports';
+import { shareViaWhatsApp } from '../../core/utils/whatsapp';
 import { palette } from '../../core/theme/palette';
 import { spacing } from '../../core/theme/layout';
 import { typography } from '../../core/theme/typography';
@@ -61,6 +63,15 @@ export function AgroLogScreen() {
     setEntries(await readCollection<AgroLogEntry>('agroLog'));
   }
 
+  async function handleShare() {
+    if (entries.length === 0) {
+      Alert.alert('Sem registros', 'Registre pelo menos uma atividade antes de compartilhar.');
+      return;
+    }
+    const header = `AgroLog · ${session?.displayName ?? 'Trabalhador'}`;
+    await shareViaWhatsApp(buildAgroLogReport(entries, header));
+  }
+
   return (
     <Screen>
       <ScreenHeader
@@ -68,6 +79,13 @@ export function AgroLogScreen() {
         title="AgroLog"
         subtitle="Registre horas e atividades por talhão"
         accent={palette.success}
+      />
+
+      <PrimaryButton
+        label="Compartilhar relatório no WhatsApp"
+        onPress={handleShare}
+        icon="whatsapp"
+        variant="secondary"
       />
 
       <Card title="Nova atividade" accent={palette.success}>
