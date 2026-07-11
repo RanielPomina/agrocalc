@@ -6,9 +6,7 @@
     "orientation": "portrait",
     "scheme": "agrosafra",
     "userInterfaceStyle": "dark",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.agrosafra.app",
       "permissions": [
@@ -24,19 +22,12 @@
         {
           "action": "VIEW",
           "autoVerify": false,
-          "data": [
-            {
-              "scheme": "agrosafra",
-              "host": "join"
-            }
-          ],
+          "data": [{ "scheme": "agrosafra" }],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
     "plugins": [
-      "expo-status-bar",
-      "expo-sharing",
       [
         "expo-av",
         {

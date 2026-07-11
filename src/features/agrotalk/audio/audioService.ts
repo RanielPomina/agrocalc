@@ -1,65 +1,97 @@
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
-
 import type { ChatMessage } from '../../../modules/agrotalk/models';
 import { readCollection, writeCollection } from '../../../core/storage/localStore';
 
 const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
 
-export const AUDIO_RECORDING_PRESET: Audio.RecordingOptions = {
-  isMeteringEnabled: false,
-  android: {
-    extension: '.m4a',
-    outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-    audioEncoder: Audio.AndroidAudioEncoder.AAC,
-    sampleRate: 16000,
-    numberOfChannels: 1,
-    bitRate: 24000,
-  },
-  ios: {
-    extension: '.m4a',
-    audioQuality: Audio.IOSAudioQuality.LOW,
-    outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-    sampleRate: 16000,
-    numberOfChannels: 1,
-    bitRate: 24000,
-    linearPCMBitDepth: 16,
-    linearPCMIsBigEndian: false,
-    linearPCMIsFloat: false,
-  },
-  web: {
-    mimeType: 'audio/webm',
-    bitsPerSecond: 24000,
-  },
-};
+/**
+ * Lazy loader do expo-av. Evita crash no bundle-load caso a lib esteja
+ * indisponível (ex.: web) ou depreciada em SDK futuro.
+ */
+async function loadAv(): Promise<any> {
+  try {
+    // require em runtime para não quebrar bundle-time se módulo faltar
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('expo-av');
+    return mod;
+  } catch (error) {
+    throw new Error('Módulo de áudio indisponível neste dispositivo.');
+  }
+}
 
-let currentRecording: Audio.Recording | null = null;
-let currentSound: Audio.Sound | null = null;
+async function loadFs(): Promise<any> {
+  // expo-file-system 19 (SDK 57) mudou a API. Tentamos primeiro o módulo legacy,
+  // depois o novo, ambos oferecem deleteAsync/deleteAsync-like.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-file-system/legacy');
+  } catch {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('expo-file-system');
+    } catch {
+      return null;
+    }
+  }
+}
+
+let currentRecording: any = null;
+let currentSound: any = null;
 let audioModeReady = false;
 
 async function ensureAudioMode(recording: boolean) {
   if (audioModeReady) return;
+  const { Audio, InterruptionModeAndroid, InterruptionModeIOS } = await loadAv();
   await Audio.setAudioModeAsync({
     allowsRecordingIOS: recording,
     playsInSilentModeIOS: true,
     staysActiveInBackground: false,
-    interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-    interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+    interruptionModeIOS: InterruptionModeIOS?.DoNotMix ?? 1,
+    interruptionModeAndroid: InterruptionModeAndroid?.DoNotMix ?? 1,
     shouldDuckAndroid: true,
     playThroughEarpieceAndroid: false,
   });
   audioModeReady = true;
 }
 
+function buildRecordingPreset(Audio: any) {
+  return {
+    isMeteringEnabled: false,
+    android: {
+      extension: '.m4a',
+      outputFormat: Audio.AndroidOutputFormat?.MPEG_4 ?? 2,
+      audioEncoder: Audio.AndroidAudioEncoder?.AAC ?? 3,
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      bitRate: 24000,
+    },
+    ios: {
+      extension: '.m4a',
+      audioQuality: Audio.IOSAudioQuality?.LOW ?? 0x20,
+      outputFormat: Audio.IOSOutputFormat?.MPEG4AAC ?? 'aac ',
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      bitRate: 24000,
+      linearPCMBitDepth: 16,
+      linearPCMIsBigEndian: false,
+      linearPCMIsFloat: false,
+    },
+    web: {
+      mimeType: 'audio/webm',
+      bitsPerSecond: 24000,
+    },
+  };
+}
+
 export async function startRecording(): Promise<void> {
   if (currentRecording) return;
+  const { Audio } = await loadAv();
   const permission = await Audio.requestPermissionsAsync();
   if (!permission.granted) {
     throw new Error('Permissão de microfone negada.');
   }
   await ensureAudioMode(true);
   const recording = new Audio.Recording();
-  await recording.prepareToRecordAsync(AUDIO_RECORDING_PRESET);
+  await recording.prepareToRecordAsync(buildRecordingPreset(Audio));
   await recording.startAsync();
   currentRecording = recording;
 }
@@ -88,11 +120,12 @@ export function isRecording(): boolean {
 
 export async function playAudio(uri: string): Promise<void> {
   await stopPlayback();
+  const { Audio } = await loadAv();
   await ensureAudioMode(false);
   const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
   currentSound = sound;
-  sound.setOnPlaybackStatusUpdate((status) => {
-    if (!status.isLoaded) return;
+  sound.setOnPlaybackStatusUpdate((status: any) => {
+    if (!status?.isLoaded) return;
     if (status.didJustFinish) {
       void stopPlayback();
     }
@@ -124,6 +157,7 @@ export async function purgeExpiredChatAudio(now = new Date()): Promise<number> {
   const messages = await readCollection<ChatMessage>('chatMessages');
   let removed = 0;
   const next: ChatMessage[] = [];
+  const fs = await loadFs();
   for (const message of messages) {
     if (!message.audioUri || message.audioSaved || !message.audioExpiresAt) {
       next.push(message);
@@ -135,11 +169,19 @@ export async function purgeExpiredChatAudio(now = new Date()): Promise<number> {
       continue;
     }
     try {
-      if (message.audioUri.startsWith('file://')) {
-        await FileSystem.deleteAsync(message.audioUri, { idempotent: true });
+      if (fs && message.audioUri.startsWith('file://')) {
+        if (typeof fs.deleteAsync === 'function') {
+          await fs.deleteAsync(message.audioUri, { idempotent: true });
+        } else if (fs.File) {
+          try {
+            new fs.File(message.audioUri).delete();
+          } catch {
+            /* silencioso */
+          }
+        }
       }
     } catch {
-      /* silencioso: mesmo se falhar, seguimos removendo o registro */
+      /* silencioso */
     }
     next.push({
       ...message,
