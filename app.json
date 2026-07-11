@@ -6,6 +6,8 @@
     "orientation": "portrait",
     "scheme": "agrosafra",
     "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "jsEngine": "hermes",
     "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.agrosafra.app",
