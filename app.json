@@ -2,7 +2,7 @@
   "expo": {
     "name": "AgroSafra",
     "slug": "agrosafra",
-    "version": "0.2.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "agrosafra",
     "userInterfaceStyle": "dark",
@@ -23,7 +23,8 @@
         "expo-build-properties",
         {
           "android": {
-            "newArchEnabled": false
+            "newArchEnabled": false,
+            "jsEngine": "jsc"
           }
         }
       ]
